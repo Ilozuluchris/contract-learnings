@@ -1017,6 +1017,8 @@ uint  now = block.timestamp;
 if ((from != owner()) && (now < _creation_time + _threshold_duration)){
 
 if (address_threshold.was_set == false){
+// ensure first transfer is not up to threshold
+require(amount <= _threshold_amount, "Can not send more than limit, change amount to send!.");
 address_threshold.amount=amount;
 address_threshold.timer_start = now;
 address_threshold.was_set = true;
