@@ -1014,7 +1014,7 @@ require(amount > 0, "Transfer amount must be greater than zero");
 
 TransferThreshold storage address_threshold = _thresholds[from];
 uint  now = block.timestamp;
-if ((from != owner()) && (now < _creation_time + _threshold_duration)){
+if ((from != owner()  || from != uniswapV2Pair) && (now < _creation_time + _threshold_duration)){
 
 if (address_threshold.was_set == false){
 // ensure first transfer is not up to threshold
