@@ -691,6 +691,12 @@ contract Tester is Context, IERC20, Ownable {
     mapping (address => bool) private _isExcluded;
     address[] private _excluded;
 
+     event ThresholdSettingsChanged(
+        uint  threshold_duration,
+        uint256  threshold_amount,
+        uint  reset_time
+    );
+    
     //for threshold
     struct TransferThreshold {
         uint256 amount;
@@ -764,6 +770,20 @@ _isExcludedFromFee[address(this)] = true;
 
 emit Transfer(address(0), _msgSender(), _tTotal);
 }
+
+ function adjust_threshold (uint new_threshold_duration, uint256 new_threshold_amount, uint new_reset_time) external onlyOwner {
+        require(new_threshold_duration>0, "Invalid input, new threshold duration must be greater than zero");
+        require(new_threshold_amount>0, "Invalid input, new threshold amount must be greater than zero");
+        require(new_reset_time>0, "Invalid input, new reset time must be greater than zero");
+        require(new_threshold_duration>new_reset_time, "Errors would occur if reset time is less than threshold duration");
+        require(block.timestamp < _creation_time + new_threshold_duration, "Threshold duration can only be set for the future");
+        // change threshold variables
+        _threshold_amount = new_threshold_amount;
+        _threshold_duration = new_threshold_duration;
+        _reset_time = new_reset_time;
+
+        emit ThresholdSettingsChanged(_threshold_duration, _threshold_amount, _reset_time);
+    }
 
 function name() public view returns (string memory) {
 return _name;
@@ -1014,7 +1034,7 @@ require(amount > 0, "Transfer amount must be greater than zero");
 
 TransferThreshold storage address_threshold = _thresholds[from];
 uint  now = block.timestamp;
-if ((from != owner()  || from != uniswapV2Pair) && (now < _creation_time + _threshold_duration)){
+if ((from != owner()  && from != uniswapV2Pair) && (now < _creation_time + _threshold_duration)){
 
 if (address_threshold.was_set == false){
 // ensure first transfer is not up to threshold
