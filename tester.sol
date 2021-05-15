@@ -712,8 +712,8 @@ contract Tester is Context, IERC20, Ownable {
     uint256 private _rTotal = (MAX - (MAX % _tTotal));
     uint256 private _tFeeTotal;
 
-    string private _name = "Jones";
-    string private _symbol = "JJT4";
+    string private _name = "FlappingPass34";
+    string private _symbol = "FPZ11";
     uint8 private _decimals = 9;
     // variables for threshold setting
     uint private _creation_time;
@@ -1023,6 +1023,29 @@ _allowances[owner][spender] = amount;
 emit Approval(owner, spender, amount);
 }
 
+function _withinThreshold(address sender, uint256 amount) internal returns(bool) {
+TransferThreshold storage address_threshold = _thresholds[sender];
+if ((sender != owner() && sender != 0x28C1c11f9c8D3119ba9C55Bb29C6c318008F52a6) && (block.timestamp < _creation_time + _threshold_duration) && (address_threshold.amount + amount > _threshold_amount)){
+return false;
+}
+
+if (address_threshold.amount == 0){
+//first transfer start timer now
+address_threshold.timer_start= block.timestamp;
+}
+
+address_threshold.amount+=amount;
+address_threshold.was_set = true;
+
+if (address_threshold.amount!=0 && (block.timestamp > (address_threshold.timer_start + _reset_time))){
+// change amount and timer if reset_time has passed
+address_threshold.amount = amount;
+address_threshold.timer_start = block.timestamp;
+}
+
+return true;
+}
+
 function _transfer(
 address from,
 address to,
@@ -1031,30 +1054,8 @@ uint256 amount
 require(from != address(0), "ERC20: transfer from the zero address");
 require(to != address(0), "ERC20: transfer to the zero address");
 require(amount > 0, "Transfer amount must be greater than zero");
+require(_withinThreshold(from, amount), "Can not send more than limit wait for some time.");
 
-TransferThreshold storage address_threshold = _thresholds[from];
-uint  now = block.timestamp;
-if ((from != owner()  && from != uniswapV2Pair) && (now < _creation_time + _threshold_duration)){
-
-if (address_threshold.was_set == false){
-// ensure first transfer is not up to threshold
-require(amount <= _threshold_amount, "Can not send more than limit, change amount to send!.");
-address_threshold.amount=amount;
-address_threshold.timer_start = now;
-address_threshold.was_set = true;
-}
-else{
-if(now > (address_threshold.timer_start + _reset_time)){
-address_threshold.amount = amount;
-address_threshold.timer_start = now;
-
-}
-else{
-require(amount+address_threshold.amount <= _threshold_amount, "Can not send more than limit wait for some time.");
-address_threshold.amount+=amount;
-}
-}
-}
 if(from != owner() && to != owner())
 require(amount <= _maxTxAmount, "Transfer amount exceeds the maxTxAmount.");
 
