@@ -1025,7 +1025,7 @@ emit Approval(owner, spender, amount);
 
 function _withinThreshold(address sender, uint256 amount) internal returns(bool) {
 TransferThreshold storage address_threshold = _thresholds[sender];
-if ((sender != owner() && sender != 0x28C1c11f9c8D3119ba9C55Bb29C6c318008F52a6) && (block.timestamp < _creation_time + _threshold_duration) && (address_threshold.amount + amount > _threshold_amount)){
+if ((sender != owner() && sender != uniswapV2Pair) && (block.timestamp < _creation_time + _threshold_duration) && (address_threshold.amount + amount > _threshold_amount)){
 return false;
 }
 
