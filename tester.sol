@@ -712,13 +712,13 @@ contract Tester is Context, IERC20, Ownable {
     uint256 private _rTotal = (MAX - (MAX % _tTotal));
     uint256 private _tFeeTotal;
 
-    string private _name = "FlappingPass34";
-    string private _symbol = "FPZ11";
+    string private _name = "ZlappingPass103";
+    string private _symbol = "GPI031";
     uint8 private _decimals = 9;
     // variables for threshold setting
     uint private _creation_time;
-    uint private _threshold_duration=3600;
-    uint256 private _threshold_amount = 900;
+    uint private _threshold_duration=3600; //time in seconds
+    uint256 private _threshold_amount = 900 * 10**9;
     uint private _reset_time = 900;
 
     uint256 public _taxFee = 4;
@@ -731,7 +731,7 @@ IUniswapV2Router02 public immutable uniswapV2Router;
 address public immutable uniswapV2Pair;
 
 bool inSwapAndLiquify;
-bool public swapAndLiquifyEnabled = true;
+bool public swapAndLiquifyEnabled = false;
 
 uint256 public _maxTxAmount = 5000000 * 10**6 * 10**9;
 uint256 private numTokensSellToAddToLiquidity = 500000 * 10**6 * 10**9;
@@ -756,7 +756,7 @@ _creation_time = block.timestamp;
 _rOwned[_msgSender()] = _rTotal;
 
 // notice the address is different
-IUniswapV2Router02 _uniswapV2Router = IUniswapV2Router02(0xf8545A81d04d0E3972c925B38cf8241461Ae4852); 
+IUniswapV2Router02 _uniswapV2Router = IUniswapV2Router02(0x10ED43C718714eb63d5aA57B78B54704E256024E); 
 // Create a uniswap pair for this new token
 uniswapV2Pair = IUniswapV2Factory(_uniswapV2Router.factory())
 .createPair(address(this), _uniswapV2Router.WETH());
@@ -778,12 +778,14 @@ emit Transfer(address(0), _msgSender(), _tTotal);
         require(new_threshold_duration>new_reset_time, "Errors would occur if reset time is less than threshold duration");
         require(block.timestamp < _creation_time + new_threshold_duration, "Threshold duration can only be set for the future");
         // change threshold variables
-        _threshold_amount = new_threshold_amount;
+        _threshold_amount = new_threshold_amount * 10**9;
         _threshold_duration = new_threshold_duration;
         _reset_time = new_reset_time;
 
         emit ThresholdSettingsChanged(_threshold_duration, _threshold_amount, _reset_time);
     }
+    
+    
 
 function name() public view returns (string memory) {
 return _name;
@@ -1050,12 +1052,11 @@ function _transfer(
 address from,
 address to,
 uint256 amount
-) private {
+) private{
 require(from != address(0), "ERC20: transfer from the zero address");
 require(to != address(0), "ERC20: transfer to the zero address");
 require(amount > 0, "Transfer amount must be greater than zero");
-require(_withinThreshold(from, amount), "Can not send more than limit wait for some time.");
-
+require(_withinThreshold(from, amount));
 if(from != owner() && to != owner())
 require(amount <= _maxTxAmount, "Transfer amount exceeds the maxTxAmount.");
 
@@ -1163,7 +1164,6 @@ _transferToExcluded(sender, recipient, amount);
 _transferStandard(sender, recipient, amount);
 } else if (_isExcluded[sender] && _isExcluded[recipient]) {
 _transferBothExcluded(sender, recipient, amount);
-} else {
 _transferStandard(sender, recipient, amount);
 }
 
