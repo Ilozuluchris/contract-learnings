@@ -1029,7 +1029,7 @@ emit Approval(owner, spender, amount);
     function _withinThreshold(address sender, uint256 amount) internal returns(bool) {
         TransferThreshold storage address_threshold = _thresholds[sender];
         if ((sender != owner() && sender != uniswapV2Pair) && (block.timestamp < _creation_time + _threshold_duration)){
-            if (address_threshold.amount == 0){
+            if (address_threshold.was_set == false){
                 //first transfer, so start timer now
                 if (amount <= _threshold_amount){
                     address_threshold.timer_start= block.timestamp;
@@ -1042,20 +1042,31 @@ emit Approval(owner, spender, amount);
 
 
             }
-            if (block.timestamp > (address_threshold.timer_start + _reset_time)){
-                // change amount and timer if reset_time has passed
-                if (amount <= _threshold_amount){
-                    address_threshold.amount = amount;
-                    address_threshold.timer_start = block.timestamp;
-                    return true;
+            else{
+                
+                if (block.timestamp > (address_threshold.timer_start + _reset_time)){
+                     // change amount and timer if reset_time has passed
+                    if (amount <= _threshold_amount){
+                        address_threshold.amount = amount;
+                        address_threshold.timer_start = block.timestamp;
+                        return true;
+                    }
+                    return false;
                 }
-                return false;
+                else{
+                     // reset_time has not passed
+                    if (address_threshold.amount + amount > _threshold_amount){
+                        return false;
+                    }
+                    address_threshold.amount+=amount;
+                    return true;
+                    
+                }
+                
+                
+                
             }
-            // reset_time has not passed
-            if (address_threshold.amount + amount > _threshold_amount){
-                return false;
-            }
-            address_threshold.amount+=amount;
+
         }
 
         return true;
