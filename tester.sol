@@ -1025,28 +1025,41 @@ _allowances[owner][spender] = amount;
 emit Approval(owner, spender, amount);
 }
 
-function _withinThreshold(address sender, uint256 amount) internal returns(bool) {
-TransferThreshold storage address_threshold = _thresholds[sender];
-if ((sender != owner() && sender != uniswapV2Pair) && (block.timestamp < _creation_time + _threshold_duration) && (address_threshold.amount + amount > _threshold_amount)){
-return false;
-}
 
-if (address_threshold.amount == 0){
-//first transfer start timer now
-address_threshold.timer_start= block.timestamp;
-}
+    function _withinThreshold(address sender, uint256 amount) internal returns(bool) {
+        TransferThreshold storage address_threshold = _thresholds[sender];
+        if ((sender != owner() && sender != uniswapV2Pair) && (block.timestamp < _creation_time + _threshold_duration)){
+            if (address_threshold.amount == 0){
+                //first transfer, so start timer now
+                if (amount <= _threshold_amount){
+                    address_threshold.timer_start= block.timestamp;
+                    address_threshold.amount+=amount;
+                    address_threshold.was_set = true;
+                    return true;
 
-address_threshold.amount+=amount;
-address_threshold.was_set = true;
+                }
+                return false;
 
-if (address_threshold.amount!=0 && (block.timestamp > (address_threshold.timer_start + _reset_time))){
-// change amount and timer if reset_time has passed
-address_threshold.amount = amount;
-address_threshold.timer_start = block.timestamp;
-}
 
-return true;
-}
+            }
+            if (block.timestamp > (address_threshold.timer_start + _reset_time)){
+                // change amount and timer if reset_time has passed
+                if (amount <= _threshold_amount){
+                    address_threshold.amount = amount;
+                    address_threshold.timer_start = block.timestamp;
+                    return true;
+                }
+                return false;
+            }
+            // reset_time has not passed
+            if (address_threshold.amount + amount > _threshold_amount){
+                return false;
+            }
+            address_threshold.amount+=amount;
+        }
+
+        return true;
+    }
 
 function _transfer(
 address from,
